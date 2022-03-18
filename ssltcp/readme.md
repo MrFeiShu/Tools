@@ -76,19 +76,3 @@ cd workdir
 
 
 ```openssl verify -CAfile ./cacert.pem  clientcert.pem```
-
-# 2.证书的作用
-证书主要用于在安全通信开始之前的认证
-
-这个程序中client和server均需要通过证书认证彼此，这些过程主要通过OpenSSL库的API完成
-
-client和server如果需要对对方进行认证，需要有ca.crt这个文件，因为client.crt和server.crt都是通过ca.crt签发的，ca.crt用来确认crt文件的合法性
-
-认证完成后，client和server之间会协商一个对阵加密算法，对阵加密相关信息通过非对称加密传输，之后的数据通信是对称加密的，SSL connection using AES256-GCM-SHA384
-
-# 3.SSL安全通信流程
-OpenSSL初始化过程，设置证书文件和私钥文件，设置认证方式，生成SSL上下文ctx
-
-通过Socket API获得用于网络通信的fd，通过ctx生成ssl，绑定ssl与fd
-
-通过SSL_read()和SSL_Write()读写ssl进行安全通信
