@@ -1,36 +1,51 @@
 # 1.证书的生成
-1. 生成server.csr和client.csr
-
-openssl genrsa -des3 -out server.key 1024
-
-openssl req -new -key server.key -out server.csr
-
-openssl genrsa -des3 -out client.key 1024
-
-openssl req -new -key client.key -out client.csr
-
-2. 生成ca.crt
-openssl genrsa -des3 -out ca.key 1024
-
-openssl req -new -x509 -key ca.key -out ca.crt
-
-3. 通过ca.crt颁发server.crt和client.crt
-
-openssl ca -in server.csr -out server.crt -cert ca.crt -keyfile ca.key
-
-openssl ca -in client.csr -out client.crt -cert ca.crt -keyfile ca.key
-
-注：
-
-这两条执行的时候可能因为没有指定openssl.cnf 会报错
-
-不过没关系，我们用默认的 /etc/pki/tls/openssl.cnf 就可以
-
-不过用默认的时候需要先执行下面两行：
-
-touch /etc/pki/CA/index.txt
-
-echo 00 > /etc/pki/CA/serial
+```
+└── somedir
+├── .rnd
+├── workdir
+│   ├── cacert.pem
+│   ├── ca.csr
+│   ├── cakey.pem
+│   ├── ca.srl
+│   ├── clientcert.pem
+│   ├── client.csr
+│   ├── key.pem
+│   ├── servercert.pem
+│   └── server.csr
+```
+# 1.1 RSA证书
+1. 生成随机数文件
+```
+cd somedir
+openssl rand -writerand .rnd
+cd workdir
+```
+2. 根证书
+- 生成根证书私钥(pem文件)
+```openssl genrsa -out cakey.pem 2048```
+- 生成根证书签发申请文件(csr文件)
+```openssl req -new -key cakey.pem -out ca.csr -subj "/C=CN/ST=myprovince/L=mycity/O=myorganization/OU=mygroup/CN=myCA"```
+- 自签发根证书(cer文件)
+```openssl x509 -req -days 365 -sha1 -extensions v3_ca -signkey cakey.pem -in ca.csr -out  cacert.pem```
+>> cacert. pem (公有密钥)  privkey.pem(私有密钥)
+3. 服务端证书
+- 生成服务端私钥
+```openssl genrsa -out srvkey.pem 2048```
+- 生成证书请求文件
+```openssl req -new -key srvkey.pem -out server.csr -subj "/C=CN/ST=myprovince/L=mycity/O=myorganization/OU=mygroup/CN=myServer"```
+- 使用根证书签发服务端证书
+```openssl x509 -req -days 365 -sha1 -extensions v3_req -CA ./cacert.pem -CAkey ./cakey.pem -CAserial ca.srl -CAcreateserial -in server.csr -out servercert.pem```
+- 使用CA证书验证server端证书
+```openssl verify -CAfile ./cacert.pem  servercert.pem```
+4. 客户端证书
+- 生成客户端私钥
+```openssl genrsa  -out clikey.pem 2048```
+- 生成证书请求文件
+```openssl req -new -key clikey.pem -out client.csr -subj "/C=CN/ST=myprovince/L=mycity/O=myorganization/OU=mygroup/CN=myClient"```
+- 使用根证书签发客户端证书
+```openssl x509 -req -days 365 -sha1 -extensions v3_req -CA  ./cacert.pem -CAkey ./cakey.pem  -CAserial ./ca.srl -in client.csr -out  clientcert.pem```
+- 使用CA证书验证客户端证书
+```openssl verify -CAfile ./cacert.pem  clientcert.pem```
 
 # 2.证书的作用
 证书主要用于在安全通信开始之前的认证
