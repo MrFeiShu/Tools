@@ -7,19 +7,19 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define CERTF "client.crt"
-#define KEYF "client.key"
-#define CACERT "ca.crt"
+#define CERTF	"E:/github/Tools/ssltcp/certs/clientcert.crt"
+#define KEYF	"E:/github/Tools/ssltcp/certs/clikey.pem"
+#define CACERT	"E:/github/Tools/ssltcp/certs/cacert.crt"
 
 
-#define CHK_NULL(x) if ((x)==NULL) exit (1)
-#define CHK_ERR(err,s) if ((err)==-1) { perror(s); exit(1); }
-#define CHK_SSL(err) if ((err)==-1) { ERR_print_errors_fp(stderr); exit(2); }
+#define CHK_NULL(x) if ((x)==NULL) return 1;
+#define CHK_ERR(err,s) if ((err)==-1) { perror(s);return 2; }
+#define CHK_SSL(err) if ((err)==-1) { ERR_print_errors_fp(stderr); return 3; }
 
 int main ()
 {
   int err;
-  int sd;
+  int sockClient;
   struct sockaddr_in sa;
   SSL_CTX* ctx;
   SSL*     ssl;
@@ -27,11 +27,23 @@ int main ()
   char*    str;
   char     buf [4096];
   SSL_METHOD *meth;
+  WORD wVersionRequested;
+  WSADATA wsaData;
+
+  wVersionRequested = MAKEWORD(2, 2);
+  err = WSAStartup(wVersionRequested, &wsaData);
+  if (err != 0) {
+	  /* Tell the user that we could not find a usable */
+	  /* Winsock DLL.                                  */
+	  printf("WSAStartup failed with error: %d\n", err);
+	  return 1;
+  }
 
   SSLeay_add_ssl_algorithms();
   meth = (SSL_METHOD *)SSLv23_client_method();
   SSL_load_error_strings();
-  ctx = SSL_CTX_new (meth);                        CHK_NULL(ctx);
+  ctx = SSL_CTX_new (meth);
+  CHK_NULL(ctx);
 
   CHK_SSL(err);
 
@@ -57,22 +69,33 @@ int main ()
   /* ----------------------------------------------- */
   /* Create a socket and connect to server using normal socket calls. */
 
-  sd = socket (AF_INET, SOCK_STREAM, 0);       CHK_ERR(sd, "socket");
+  sockClient = socket (AF_INET, SOCK_STREAM, 0);
+  if (INVALID_SOCKET == sockClient)
+  {
+	  printf("socket failed with error %u.\n", WSAGetLastError());
+  }
+  CHK_ERR(sockClient, "socket");
 
   memset (&sa, '\0', sizeof(sa));
   sa.sin_family      = AF_INET;
   sa.sin_addr.s_addr = inet_addr ("127.0.0.1");   /* Server IP */
-  sa.sin_port        = htons     (1111);          /* Server Port number */
+  sa.sin_port        = htons     (20000);          /* Server Port number */
 
-  err = connect(sd, (struct sockaddr*) &sa,
-                sizeof(sa));                   CHK_ERR(err, "connect");
+  err = connect(sockClient, (struct sockaddr*) &sa, sizeof(sa));
+  if (SOCKET_ERROR == err)
+  {
+	  printf("connect failed with error %u.\n", WSAGetLastError());
+  }
+  CHK_ERR(err, "connect");
 
   /* ----------------------------------------------- */
   /* Now we have TCP conncetion. Start SSL negotiation. */
 
-  ssl = SSL_new (ctx);                         CHK_NULL(ssl);
-  SSL_set_fd (ssl, sd);
-  err = SSL_connect (ssl);                     CHK_SSL(err);
+  ssl = SSL_new (ctx);
+  CHK_NULL(ssl);
+  SSL_set_fd (ssl, sockClient);
+  err = SSL_connect (ssl);
+  CHK_SSL(err);
 
   /* Following two steps are optional and not required for
      data exchange to be successful. */
@@ -83,7 +106,8 @@ int main ()
 
   /* Get server's certificate (note: beware of dynamic allocation) - opt */
 
-  server_cert = SSL_get_peer_certificate (ssl);       CHK_NULL(server_cert);
+  server_cert = SSL_get_peer_certificate (ssl);
+  CHK_NULL(server_cert);
   printf ("Server certificate:\n");
 
   str = X509_NAME_oneline (X509_get_subject_name (server_cert),0,0);
@@ -104,18 +128,22 @@ int main ()
   /* --------------------------------------------------- */
   /* DATA EXCHANGE - Send a message and receive a reply. */
 
-  err = SSL_write (ssl, "Hello World!", strlen("Hello World!"));  CHK_SSL(err);
+  err = SSL_write (ssl, "Hello World!", strlen("Hello World!"));
+  CHK_SSL(err);
 
-  err = SSL_read (ssl, buf, sizeof(buf) - 1);                     CHK_SSL(err);
+  err = SSL_read (ssl, buf, sizeof(buf) - 1);
+  CHK_SSL(err);
   buf[err] = '\0';
   printf ("Got %d chars:'%s'\n", err, buf);
   SSL_shutdown (ssl);  /* send SSL/TLS close_notify */
 
   /* Clean up. */
 
-  closesocket (sd);
+  closesocket (sockClient);
   SSL_free (ssl);
   SSL_CTX_free (ctx);
+
+  WSACleanup();
 
   return 0;
 }
