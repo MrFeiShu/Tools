@@ -13,14 +13,14 @@
 │   ├── servercert.pem
 │   └── server.csr
 ```
-# 1.1 RSA证书
-1. 生成随机数文件
+## 1.1 RSA证书
+### 1.1.1 生成随机数文件
 ```
 cd somedir
 openssl rand -writerand .rnd
 cd workdir
 ```
-2. 根证书
+### 1.1.2 根证书
 - 生成根证书私钥(pem文件)
 
 ```openssl genrsa -out cakey.pem 2048```
@@ -35,7 +35,7 @@ cd workdir
 
 > cacert. pem (公有密钥)  privkey.pem(私有密钥)
 
-3. 服务端证书
+### 1.1.3 服务端证书
 - 生成服务端私钥
 
 
@@ -56,7 +56,7 @@ cd workdir
 
 ```openssl verify -CAfile ./cacert.pem  servercert.pem```
 
-4. 客户端证书
+### 1.1.4 客户端证书
 - 生成客户端私钥
 
 
