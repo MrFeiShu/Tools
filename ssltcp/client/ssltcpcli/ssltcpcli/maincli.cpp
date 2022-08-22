@@ -7,9 +7,15 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#define CERTF	"E:/github/Tools/ssltcp/certs/clientcert.crt"
-#define KEYF	"E:/github/Tools/ssltcp/certs/clikey.pem"
-#define CACERT	"E:/github/Tools/ssltcp/certs/cacert.crt"
+#ifdef SM2_VERSION
+#define CERTF	"E:/github/Tools/ssltcp/certs/SM2/clientcert.crt"
+#define KEYF	"E:/github/Tools/ssltcp/certs/SM2/clikey.pem"
+#define CACERT	"E:/github/Tools/ssltcp/certs/SM2/cacert.crt"
+#else
+#define CERTF	"E:/github/Tools/ssltcp/certs/RSA/clientcert.crt"
+#define KEYF	"E:/github/Tools/ssltcp/certs/RSA/clikey.pem"
+#define CACERT	"E:/github/Tools/ssltcp/certs/RSA/cacert.crt"
+#endif
 
 
 #define CHK_NULL(x) if ((x)==NULL) return 1;
@@ -39,8 +45,8 @@ int main ()
 	  return 1;
   }
 
-  SSLeay_add_ssl_algorithms();
-  meth = (SSL_METHOD *)SSLv23_client_method();
+  //SSLeay_add_ssl_algorithms();
+  meth = (SSL_METHOD *)TLS_server_method();
   SSL_load_error_strings();
   ctx = SSL_CTX_new (meth);
   CHK_NULL(ctx);

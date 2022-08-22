@@ -16,9 +16,15 @@ extern "C"
 /* define HOME to be dir for key and cert files... */
 #define HOME "./"
 /* Make these what you want for cert & key files */
-#define CERTF	"E:/github/Tools/ssltcp/certs/servercert.crt"
-#define KEYF	"E:/github/Tools/ssltcp/certs/srvkey.pem"
-#define CACERT	"E:/github/Tools/ssltcp/certs/cacert.crt"
+#ifdef SM2_VERSION
+#define CERTF	"E:/github/Tools/ssltcp/certs/SM2/servercert.crt"
+#define KEYF	"E:/github/Tools/ssltcp/certs/SM2/srvkey.pem"
+#define CACERT	"E:/github/Tools/ssltcp/certs/SM2/cacert.crt"
+#else
+#define CERTF	"E:/github/Tools/ssltcp/certs/RSA/servercert.crt"
+#define KEYF	"E:/github/Tools/ssltcp/certs/RSA/srvkey.pem"
+#define CACERT	"E:/github/Tools/ssltcp/certs/RSA/cacert.crt"
+#endif
 
 
 #define CHK_NULL(x) if ((x)==NULL) return 1;
@@ -54,8 +60,8 @@ int main ()
   /* SSL preliminaries. We keep the certificate and key with the context. */
 
   SSL_load_error_strings();
-  SSLeay_add_ssl_algorithms();
-  meth = (SSL_METHOD*)SSLv23_server_method();
+  //SSLeay_add_ssl_algorithms();
+  meth = (SSL_METHOD*)TLS_server_method();
   ctx = SSL_CTX_new (meth);
   if (!ctx) {
     ERR_print_errors_fp(stderr);
