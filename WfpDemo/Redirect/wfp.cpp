@@ -48,11 +48,15 @@ static void unregister_callout()
 {
 	auto status = FwpsCalloutUnregisterById(callout_id_v4);
 	if (!NT_SUCCESS(status))
+	{
 		KdPrint(("|LIBREDIRECT|unregister_callout|Failed to unregister IPv4 callout, status: 0x%08x", status));
+	}
 
 	status = FwpsCalloutUnregisterById(callout_id_v6);
 	if (!NT_SUCCESS(status))
+	{
 		KdPrint(("|LIBREDIRECT|unregister_callout|Failed to unregister IPv6 callout, status: 0x%08x", status));
+	}
 }
 
 

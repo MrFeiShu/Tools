@@ -155,7 +155,7 @@ void callout_classify(
 		return;
 	}
 
-	auto item = reinterpret_cast<conn_item_t*>(ExAllocatePool(PagedPool, sizeof(conn_item_t)));
+	auto item = reinterpret_cast<conn_item_t*>(ExAllocatePool2(PagedPool, sizeof(conn_item_t), '1gat'));
 	item->conn = conn;
 	InsertHeadList(&connect_list, &item->list_entry);
 	WdfWaitLockRelease(connect_list_lck);
@@ -225,7 +225,7 @@ void do_redirect(connect_t& conn)
 
 	// 设置转发context，用于在服务端获取
 	auto addr_info = reinterpret_cast<addr_info_t*>(
-		ExAllocatePoolWithTag(
+		ExAllocatePool2(
 			NonPagedPool, sizeof(addr_info_t),
 			*reinterpret_cast<const ULONG*>(REDIRECT_POOL_TAG)		// shit
 		));

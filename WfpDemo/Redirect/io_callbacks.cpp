@@ -74,7 +74,7 @@ VOID device_ioctl(IN WDFQUEUE queue, IN WDFREQUEST request,
 			WdfRequestCompleteWithInformation(request, status, sizeof(connect_t));
 			return;
 		}
-		auto req_item = reinterpret_cast<read_item_t*>(ExAllocatePool(PagedPool, sizeof(read_item_t)));
+		auto req_item = reinterpret_cast<read_item_t*>(ExAllocatePool2(PagedPool, sizeof(read_item_t), '1gat'));
 		req_item->request = request;
 		WdfRequestMarkCancelableEx(request, request_cancel);
 		InsertHeadList(&read_req_list, &req_item->list_entry);
