@@ -22,6 +22,9 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private:
+    void SetOutputPath(const QString& strOutDirPath);
+
 private slots:
     void on_pushButtonVideo_clicked();
 
@@ -35,11 +38,11 @@ private slots:
 
     void on_comboBoxFormat_currentTextChanged(const QString &arg1);
 
-    void onNotifyInfo();
+    void onNotifyInfo(const QString& strProgress);
 
 private:
     Ui::MainWindow *ui;
-    QStringListModel *listModel;
+    QStringListModel * m_ListModel;
 
     CVideoTrans* m_videoTrans;
 
@@ -49,6 +52,8 @@ private:
     QString m_strOutFileBase;
 
     QString m_strEx;
+
+    QStringList m_ListText;
 
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;

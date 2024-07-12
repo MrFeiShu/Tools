@@ -7,7 +7,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , listModel(nullptr)
+    , m_ListModel(nullptr)
     , m_videoTrans(nullptr)
 {
     ui->setupUi(this);
@@ -19,13 +19,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBoxFormat->addItem(tr("rmvb"));
 
     m_videoTrans = new CVideoTrans;
-    connect(m_videoTrans, SIGNAL(NotifyInfo()), this, SLOT(onNotifyInfo()));
+    connect(m_videoTrans, SIGNAL(NotifyInfo(QString)), this, SLOT(onNotifyInfo(QString)));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete listModel;
+    delete m_ListModel;
 }
 
 void MainWindow::on_pushButtonVideo_clicked()
@@ -58,16 +58,18 @@ void MainWindow::dropEvent(QDropEvent* event) {
     const QMimeData* mimeData = event->mimeData();
     if (mimeData->hasUrls()) {
         QList<QUrl> urlList = mimeData->urls();
-        QStringList list;
         for (const QUrl& url : urlList) {
-            list.append(url.toLocalFile());
+            m_ListText.append(url.toLocalFile());
             qDebug() << u8"拖拽的文件路径：" << url.toLocalFile();
         }
 
-        listModel = new QStringListModel(list);
-        ui->listViewItem->setModel(listModel);
+        m_ListModel = new QStringListModel(m_ListText);
+        ui->listViewItem->setModel(m_ListModel);
 
-        m_strInFile = list[0];
+        m_strInFile = m_ListText[0];
+        QFileInfo info(m_strInFile);
+
+        SetOutputPath(info.dir().absolutePath());
     }
 }
 
@@ -95,7 +97,6 @@ void MainWindow::on_pushButtonTrans_clicked()
     m_videoTrans->start();
 }
 
-
 void MainWindow::on_pushButtonPath_clicked()
 {
     QString selectDir = QFileDialog::getExistingDirectory();
@@ -103,29 +104,9 @@ void MainWindow::on_pushButtonPath_clicked()
 
     if(false == m_strInFile.isEmpty())
     {
-        QFileInfo fileInfo(m_strInFile);
-        qDebug()<<tr("base name:")<<fileInfo.baseName();
-
-        m_strOutFileBase = selectDir;
-        qDebug()<<tr("output file path 1: ")<<m_strOutFileBase;
-
-        if(false == m_strOutFileBase.endsWith(tr("/")))
-        {
-            m_strOutFileBase += tr("/");
-            qDebug()<<tr("output file path 2: ")<<m_strOutFileBase;
-        }
-
-        m_strOutFileBase += fileInfo.baseName();
-        qDebug()<<tr("output file path 3: ")<<m_strOutFileBase;
-        m_strOutFileBase += tr(".");
-        qDebug()<<tr("output file path 4: ")<<m_strOutFileBase;
-
-        QString OutFile = m_strOutFileBase + m_strEx;
-
-        ui->lineEditOutputPath->setText(OutFile);
+        SetOutputPath(selectDir);
     }
 }
-
 
 void MainWindow::on_comboBoxFormat_currentTextChanged(const QString &arg1)
 {
@@ -139,7 +120,58 @@ void MainWindow::on_comboBoxFormat_currentTextChanged(const QString &arg1)
     }
 }
 
-void MainWindow::onNotifyInfo()
+void MainWindow::onNotifyInfo(const QString& strProgress)
 {
     qDebug("[ty] MainWindow::onNotifyInfo enter.");
+
+    // 获取listview的内容并修改
+    QString strText;
+    QModelIndex index = m_ListModel->index(0, 0);
+    if(index.isValid())
+    {
+        /*
+        QVariant data = m_ListModel->data(index);
+        if(data.canConvert<QString>())
+        {
+            strText = data.toString();
+        }
+        */
+
+        strText = m_ListText[index.row()];
+        strText += tr(" [");
+        strText += strProgress;
+        strText += tr("]");
+
+        m_ListModel->setData(index, strText, Qt::DisplayRole);
+    }
+
+    qDebug()<<"item old: " << strText;
+
+
+    qDebug()<<"item new: " << strText;
+
+}
+
+void MainWindow::SetOutputPath(const QString& strOutDirPath)
+{
+    QFileInfo fileInfo(m_strInFile);
+    qDebug()<<tr("base name:")<<fileInfo.baseName();
+
+    m_strOutFileBase = strOutDirPath;
+    qDebug()<<tr("output file path 1: ")<<m_strOutFileBase;
+
+    if(false == m_strOutFileBase.endsWith(tr("/")))
+    {
+        m_strOutFileBase += tr("/");
+        qDebug()<<tr("output file path 2: ")<<m_strOutFileBase;
+    }
+
+    m_strOutFileBase += fileInfo.baseName();
+    qDebug()<<tr("output file path 3: ")<<m_strOutFileBase;
+    m_strOutFileBase += tr(".");
+    qDebug()<<tr("output file path 4: ")<<m_strOutFileBase;
+
+    QString OutFile = m_strOutFileBase + m_strEx;
+
+    ui->lineEditOutputPath->setText(OutFile);
 }
