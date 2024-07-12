@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QThread>
+#include <QSemaphore>
 
 typedef struct _st_FrameInfo
 {
@@ -27,6 +28,8 @@ public:
 
     void SetFileInfo(const QString& strInFile, const QString& strOutFile);
 
+    void InitTrans(const QSemaphore* pSem, const int nIndex, const QString& strInFile, const QString& strOutFile);
+
 private:
     void CountFrames();
 
@@ -37,10 +40,13 @@ private:
     char* m_pszInFile;
     char* m_pszOutFile;
 
+    QSemaphore* m_pSem;
+    int m_nIndex;
+
     FrameInfo m_FrameInfo;
 
 signals:
-    void NotifyInfo(const QString& strProgress);
+    void NotifyInfo(const int index, const QString& strProgress);
 };
 
 #endif // CVIDEOTRANS_H

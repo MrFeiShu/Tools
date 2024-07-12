@@ -6,7 +6,7 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QStringListModel>
-#include "cvideotrans.h"
+#include "ctransmanager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -23,7 +23,7 @@ public:
     ~MainWindow();
 
 private:
-    void SetOutputPath(const QString& strOutDirPath);
+    void SetOutputPath(const QString& strOutDirPath, bool bSingleFile = true);
 
 private slots:
     void on_pushButtonVideo_clicked();
@@ -38,19 +38,16 @@ private slots:
 
     void on_comboBoxFormat_currentTextChanged(const QString &arg1);
 
-    void onNotifyInfo(const QString& strProgress);
+    void onNotifyInfo(const int index, const QString& strProgress);
 
 private:
     Ui::MainWindow *ui;
     QStringListModel * m_ListModel;
 
     CVideoTrans* m_videoTrans;
+    CTransManager m_TransManager;
 
-    QString m_strInFile;
-    //QString m_strOutFile;
-
-    QString m_strOutFileBase;
-
+    QString m_strOutDir;
     QString m_strEx;
 
     QStringList m_ListText;

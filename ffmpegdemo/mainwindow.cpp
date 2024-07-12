@@ -19,7 +19,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->comboBoxFormat->addItem(tr("rmvb"));
 
     m_videoTrans = new CVideoTrans;
-    connect(m_videoTrans, SIGNAL(NotifyInfo(QString)), this, SLOT(onNotifyInfo(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -48,26 +47,38 @@ void MainWindow::on_pushButtonImage_clicked()
 
 }
 
-void MainWindow::dragEnterEvent(QDragEnterEvent* event) {
-    if (event->mimeData()->hasUrls()) {
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (event->mimeData()->hasUrls())
+    {
         event->acceptProposedAction();
     }
 }
 
-void MainWindow::dropEvent(QDropEvent* event) {
+void MainWindow::dropEvent(QDropEvent* event)
+{
     const QMimeData* mimeData = event->mimeData();
-    if (mimeData->hasUrls()) {
+    if (mimeData->hasUrls())
+    {
+        m_ListText.clear();
+
         QList<QUrl> urlList = mimeData->urls();
-        for (const QUrl& url : urlList) {
+        for (const QUrl& url : urlList)
+        {
             m_ListText.append(url.toLocalFile());
             qDebug() << u8"拖拽的文件路径：" << url.toLocalFile();
         }
+    }
 
-        m_ListModel = new QStringListModel(m_ListText);
-        ui->listViewItem->setModel(m_ListModel);
+    m_ListModel = new QStringListModel(m_ListText);
+    ui->listViewItem->setModel(m_ListModel);
 
-        m_strInFile = m_ListText[0];
-        QFileInfo info(m_strInFile);
+    // 单个文件，默认输出目录为当前文件的目录
+    // 多个文件，则强制用户选择输出目录
+    if(m_ListText.size() == 1)
+    {
+        QString strInFile = m_ListText[0];
+        QFileInfo info(strInFile);
 
         SetOutputPath(info.dir().absolutePath());
     }
@@ -75,26 +86,34 @@ void MainWindow::dropEvent(QDropEvent* event) {
 
 void MainWindow::on_pushButtonTrans_clicked()
 {
-    QString OutFile;
+    QString strOutFile;
+    QString strInFile;
 
-    if(true == m_strInFile.isEmpty() || true == m_strOutFileBase.isEmpty())
+    m_TransManager.InitVideoTrans(2);
+
+    for(int i = 0; i < m_ListText.size(); i++)
     {
-        qDebug("[ty] invalid path.");
-        return;
+        strInFile = m_ListText[i];
+        QFileInfo info(strInFile);
+
+        strOutFile = m_strOutDir;
+        if(false == strOutFile.endsWith(tr("/")))
+        {
+            strOutFile += tr("/");
+        }
+        strOutFile += info.baseName();
+        strOutFile += tr(".");
+        strOutFile += m_strEx;
+
+        (void)m_TransManager.AddVideoInfo(i, strInFile, strOutFile);
     }
 
-    OutFile = m_strOutFileBase + m_strEx;
-    qDebug()<<"InFile: "<< m_strInFile<<"OutFile:"<<OutFile;
-
-    if(nullptr == m_videoTrans)
+    for (int i = 0; i < m_TransManager.m_VideoTransList.size(); i++)
     {
-        qDebug("[ty] m_videoTrans is nullptr.");
-        return;
+        connect(m_TransManager.m_VideoTransList[i], SIGNAL(NotifyInfo(int, QString)), this, SLOT(onNotifyInfo(int, QString)));
     }
 
-    m_videoTrans->SetFileInfo(m_strInFile, OutFile);
-
-    m_videoTrans->start();
+    (void)m_TransManager.ExecVideoTrans();
 }
 
 void MainWindow::on_pushButtonPath_clicked()
@@ -102,10 +121,8 @@ void MainWindow::on_pushButtonPath_clicked()
     QString selectDir = QFileDialog::getExistingDirectory();
     qDebug() << "Dir Path:" << selectDir;
 
-    if(false == m_strInFile.isEmpty())
-    {
-        SetOutputPath(selectDir);
-    }
+    // 只有一个待转换的视频文件，则显示完整输出路径；否则只显示输出目录
+    SetOutputPath(selectDir, (m_ListText.size() == 1) ? true : false);
 }
 
 void MainWindow::on_comboBoxFormat_currentTextChanged(const QString &arg1)
@@ -113,65 +130,58 @@ void MainWindow::on_comboBoxFormat_currentTextChanged(const QString &arg1)
     qDebug()<<tr("text:")<<arg1;
     m_strEx = arg1;
 
-    if(false == m_strOutFileBase.isEmpty() && false == m_strEx.isEmpty())
+    if(false == m_strOutDir.isEmpty() && false == m_strEx.isEmpty())
     {
-        QString OutFile = m_strOutFileBase + m_strEx;
+        QString OutFile = m_strOutDir + m_strEx;
         ui->lineEditOutputPath->setText(OutFile);
     }
 }
 
-void MainWindow::onNotifyInfo(const QString& strProgress)
+void MainWindow::onNotifyInfo(const int index, const QString& strProgress)
 {
     qDebug("[ty] MainWindow::onNotifyInfo enter.");
 
     // 获取listview的内容并修改
     QString strText;
-    QModelIndex index = m_ListModel->index(0, 0);
-    if(index.isValid())
+    QModelIndex qIndex = m_ListModel->index(index, 0);
+    if(qIndex.isValid())
     {
-        /*
-        QVariant data = m_ListModel->data(index);
-        if(data.canConvert<QString>())
-        {
-            strText = data.toString();
-        }
-        */
-
-        strText = m_ListText[index.row()];
+        strText = m_ListText[qIndex.row()];
         strText += tr(" [");
         strText += strProgress;
         strText += tr("]");
 
-        m_ListModel->setData(index, strText, Qt::DisplayRole);
+        m_ListModel->setData(qIndex, strText, Qt::DisplayRole);
     }
-
-    qDebug()<<"item old: " << strText;
-
-
-    qDebug()<<"item new: " << strText;
-
 }
 
-void MainWindow::SetOutputPath(const QString& strOutDirPath)
+void MainWindow::SetOutputPath(const QString& strOutDirPath, bool bSingleFile/* = true*/)
 {
-    QFileInfo fileInfo(m_strInFile);
-    qDebug()<<tr("base name:")<<fileInfo.baseName();
+    QString OutFile;
 
-    m_strOutFileBase = strOutDirPath;
-    qDebug()<<tr("output file path 1: ")<<m_strOutFileBase;
+    m_strOutDir = strOutDirPath;
 
-    if(false == m_strOutFileBase.endsWith(tr("/")))
+    if(true == bSingleFile)
     {
-        m_strOutFileBase += tr("/");
-        qDebug()<<tr("output file path 2: ")<<m_strOutFileBase;
+        // 单个文件显示完整的路径名
+        QFileInfo fileInfo(m_ListText[0]);
+        qDebug()<<tr("base name:")<<fileInfo.baseName();
+
+        OutFile = m_strOutDir;
+
+        if(false == m_strOutDir.endsWith(tr("/")))
+        {
+            OutFile += tr("/");
+        }
+        OutFile += fileInfo.baseName();
+        OutFile += tr(".");
+        OutFile += m_strEx;
     }
-
-    m_strOutFileBase += fileInfo.baseName();
-    qDebug()<<tr("output file path 3: ")<<m_strOutFileBase;
-    m_strOutFileBase += tr(".");
-    qDebug()<<tr("output file path 4: ")<<m_strOutFileBase;
-
-    QString OutFile = m_strOutFileBase + m_strEx;
+    else
+    {
+        // 批量处理则只显示输出目录
+        OutFile = strOutDirPath;
+    }
 
     ui->lineEditOutputPath->setText(OutFile);
 }

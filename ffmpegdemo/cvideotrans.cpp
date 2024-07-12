@@ -8,7 +8,7 @@ extern "C"
 }
 
 CVideoTrans::CVideoTrans()
-    :m_pszInFile(nullptr), m_pszOutFile(nullptr)
+    :m_pszInFile(nullptr), m_pszOutFile(nullptr), m_nIndex(-1)
 {
     memset(&m_FrameInfo, 0x00, sizeof(m_FrameInfo));
 }
@@ -173,7 +173,7 @@ bool CVideoTrans::Translate()
         return false;
     }
 
-    //CountFrames(m_pszInFile, frameInfo);
+    qDebug("[CVideoTrans::Translate] [index:%d] start trans video:%s to %s.", m_nIndex, m_pszInFile, m_pszOutFile);
 
     pkt = av_packet_alloc();
     if (!pkt) {
@@ -259,7 +259,7 @@ bool CVideoTrans::Translate()
         goto end;
     }
 
-    emit NotifyInfo(tr("0%"));
+    emit NotifyInfo(m_nIndex, tr("0%"));
 
     while (1)
     {
@@ -292,7 +292,7 @@ bool CVideoTrans::Translate()
                 QString strPercent = QString::number(nPercent);
                 strPercent += tr("%");
 
-                emit NotifyInfo(strPercent);
+                emit NotifyInfo(m_nIndex, strPercent);
             }
         }
 
@@ -325,7 +325,7 @@ bool CVideoTrans::Translate()
     }
 
     qDebug("[ty] countAllPkt = %d.", countAllPkt);
-    emit NotifyInfo(tr("100%"));
+    emit NotifyInfo(m_nIndex, tr("100%"));
 
     av_write_trailer(ofmt_ctx);
 end:
@@ -357,8 +357,25 @@ void CVideoTrans::run()
 {
     qDebug("[ty]CVideoTrans::run enter.");
 
+    if(nullptr == m_pSem)
+    {
+        qDebug("[CVideoTrans::run] m_pSem is nullptr.");
+        return;
+    }
+
+    m_pSem->acquire();
+
     CountFrames();
 
     Translate();
+
+    m_pSem->release();
 }
 
+void CVideoTrans::InitTrans(const QSemaphore* pSem, const int nIndex, const QString& strInFile, const QString& strOutFile)
+{
+    m_nIndex = nIndex;
+    m_pSem = const_cast<QSemaphore*>(pSem);
+
+    SetFileInfo(strInFile, strOutFile);
+}
