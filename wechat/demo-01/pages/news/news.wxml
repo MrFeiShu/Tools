@@ -1,0 +1,53 @@
+<!--pages/news/news.wxml-->
+<text>pages/news/news.wxml</text>
+<view class="box">块级元素</view>
+
+<text>Text 文本</text>
+
+<swiper class="swiper" autoplay="true" indicator-dots="true">
+  <swiper-item>
+    item1
+  </swiper-item>
+  <swiper-item>
+    item2
+  </swiper-item>
+  <swiper-item>
+    item3
+  </swiper-item>
+</swiper>
+
+<scroll-view class="scroll-view" enable-flex scroll-x="true">
+  <text>1</text>
+  <text>2</text>
+  <text>3</text>
+  <text>4</text>
+  <text>5</text>
+  <text>6</text>
+  <text>7</text>
+  <text>8</text>
+  <text>9</text>
+  <text>10</text>
+</scroll-view>
+
+<icon type="success" size="40"/>
+<icon type="waiting" size="40"/>
+
+<view>
+  <progress percent="30" show-info="true" active/>
+  <view class="progress-box">
+  <progress percent="20" show-info stroke-width="3"/>
+</view>
+
+<view class="progress-box">
+  <progress percent="40" active stroke-width="3" />
+  <icon class="progress-cancel" type="cancel"></icon>
+</view>
+
+<view class="progress-box">
+  <progress percent="60" active stroke-width="3" />
+</view>
+
+<view class="progress-box">
+  <progress percent="80" color="#10AEFF" active stroke-width="3" />
+</view>
+</view>

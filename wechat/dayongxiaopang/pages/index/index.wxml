@@ -1,0 +1,27 @@
+<!--index.wxml-->
+<view>
+  <view class="container" style="flex-direction:row-reverse;">
+    <!-- 显示矩阵中的数据 -->
+    <block wx:for="{{ matrix }}" wx:key="rowKey">
+      <view style="flex-direction: column;">
+        <block wx:for="{{ item }}" wx:key="cellKey">
+          <view style="flex-direction: row;">
+            <view class="text" >
+              <text>{{ item.charA }}</text>
+            </view>
+            <view class="punctuation" >
+              <text>{{ item.charB }}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </block>
+  </view>
+  
+  <view class="container" style="flex-direction:row;">
+    <!-- 上一页按钮 -->
+    <button bindtap="onPreviousPage" disabled="{{ currentPage < 1 }}">上一页</button>
+    <!-- 下一页按钮 -->
+    <button bindtap="onNextPage" disabled="{{ (currentPage + 1) >= totalPages }}">下一页</button>
+  </view>
+</view>

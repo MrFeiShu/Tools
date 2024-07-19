@@ -1,0 +1,31 @@
+/* pages/news/news.wxss */
+
+.box{
+  background-color: pink;
+  height: 200rpx;
+}
+
+text{
+  background-color: yellow;
+}
+
+.swiper{
+  background-color:pink;
+}
+
+.scroll-view{
+  margin: 20px 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.scroll-view text{
+  display: inline-block;
+  width: 80rpx;
+  margin: 0 20rpx;
+}
+
+.progress-box{
+  width: 600rpx;
+  margin: 0 auto;
+}
