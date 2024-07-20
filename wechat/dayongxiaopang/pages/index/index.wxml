@@ -1,5 +1,5 @@
 <!--index.wxml-->
-<view>
+<view bindtouchstart="handleTouchStart" bindtouchmove="handleTouchMove" bindtouchend="handleTouchEnd">
   <view class="container" style="flex-direction:row-reverse;">
     <!-- 显示矩阵中的数据 -->
     <block wx:for="{{ matrix }}" wx:key="rowKey">

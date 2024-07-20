@@ -17,7 +17,9 @@ Page({
     charString: [], // 存放没有标点符号的中文文字数组
     punct: [], // 专门存放标点符号的数组
     disItems: [],  // 对象数组，用于显示
-    indexArray: []
+    indexArray: [],
+    touchStartX: 0,
+    touchEndX: 0
   },
 
 displayChars: function(){
@@ -198,6 +200,37 @@ displayChars: function(){
       matrix: matrixTmp
     });
   },
+
+  handleTouchStart: function(event) {
+    this.setData({
+      touchStartX: event.touches[0].clientX
+    });
+  },
+
+  handleTouchMove: function(event) {
+    // 不需要做任何事情，但我们保留这个函数以便将来可能的扩展
+  },
+
+  handleTouchEnd: function(event) {
+    this.setData({
+      touchEndX: event.changedTouches[0].clientX
+    });
+
+    const deltaX = this.data.touchStartX - this.data.touchEndX;
+    const currentPage = this.data.currentPage;
+    const totalPages = this.data.totalPages;
+
+    if (deltaX > 50 && currentPage < totalPages - 1) {
+      // 用户向左滑动，切换到下一页
+      console.log("nextpage.");
+      this.onNextPage();
+    } else if (deltaX < -50 && currentPage > 0) {
+      // 用户向右滑动，切换到上一页
+      console.log("Previouspage.");
+      this.onPreviousPage();
+    }
+  },
+
   /**
    * 生命周期函数--监听页面初次渲染完成
    */
