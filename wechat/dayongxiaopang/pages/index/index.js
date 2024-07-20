@@ -8,7 +8,7 @@ Page({
     matrix: [], // 二维数组，用于显示页面的文字。更新该数组，即可使页面文字更新
     currentPage: 0, // 当前页码
     rowsPerPage: 0, // 每页显示的行数
-    columnPerPage: 0, // 每页显示的列数
+    columnsPerPage: 0, // 每页显示的列数
     totalPages: 0, // 总页数
     charWidthPx: 50, // 每个字的宽度，像素
     charHeightPx: 50, // 每个字的高度，像素
@@ -20,30 +20,60 @@ Page({
     strArray: '一二三四五六七八九十十一十二十三十四十五十六十七十八十九二十二十一二十二二十三二十四二十五二十六二十七二十八二十九三十'.split('')
   },
 
+displayChars: function(){
+  const curPageIndex = this.data.currentPage;
+  const totalCharNumTmp = this.data.totalCharNum;
+  const columnsPerPageTmp = this.data.columnsPerPage;
+  const rowsPerPageTmp = this.data.rowsPerPage;
+  const itemLength = this.data.disItems.length;
+  let matrixTmp = [];
+  let startPos = 0;
+  let endPos = 0;
+  let disItemsTmp = [];
+
+  // 取当前页面应该显示的字和标点符号
+  startPos = curPageIndex * totalCharNumTmp;
+  endPos = Math.min(itemLength, startPos + totalCharNumTmp);
+  disItemsTmp = this.data.disItems.slice(startPos, endPos);
+  console.log(disItemsTmp);
+
+  // 显示字符和标点符号
+  matrixTmp = Array.from({length: columnsPerPageTmp}, (_, rowIndex) =>
+      Array.from({length: rowsPerPageTmp}, (_, colIndex) =>
+      disItemsTmp[rowIndex * rowsPerPageTmp + colIndex]
+        )
+      );
+
+  this.setData({
+    matrix: matrixTmp
+  });
+},
+
   /**
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
     console.log("onload enter.");
     
+    // 计算每页可显示的字数
     const info = wx.getWindowInfo();
     console.log("info.screenHeight:"+info.screenHeight+"; info.screenWidth:"+info.screenWidth);
     console.log("info.windowHeight:"+info.windowHeight+"; info.windowWidth:"+info.windowWidth);
 
     this.setData({
-      columnPerPage: Math.floor(info.windowWidth / this.data.charWidthPx),
+      columnsPerPage: Math.floor(info.windowWidth / this.data.charWidthPx),
       rowsPerPage: Math.floor(info.windowHeight / this.data.charHeightPx) - 1
     });
 
-    console.log("rowsPerPage:"+this.data.rowsPerPage+"; columnPerPage:"+this.data.columnPerPage);
+    console.log("rowsPerPage:"+this.data.rowsPerPage+"; columnPerPage:"+this.data.columnsPerPage);
 
     // 设置每页显示的字符总数
     this.setData({
-      totalCharNum: this.data.rowsPerPage * this.data.columnPerPage
+      totalCharNum: this.data.rowsPerPage * this.data.columnsPerPage
     });
     console.log("totalCharNum:"+this.data.totalCharNum);
 
-    // 分离中文文字和标点符号
+    // 分离原文的中文文字和标点符号
     let str = [];
     let punct = [];
     for (let i = 0; i < this.data.originalString.length; i++) {
@@ -67,7 +97,7 @@ Page({
     console.log("this.data.punct: ", this.data.punct);
     console.log("this.data.charString: ", this.data.charString);
 
-    // 将中文文字数组和标点符号数组转化为用于显示的对象数组
+    // 将中文文字数组和标点符号数组转化为对象数组
     this.setData({
       disItems: str.map((str1, index) => ({
         charA: str1,
@@ -85,93 +115,42 @@ Page({
     });
     console.log("totalPages:"+this.data.totalPages);
 
-    // 转换为二维数组
-    let display = str.map((str1, index) => ({
-      charA: str1,
-      charB: punct[index]
-    }));
-    const matrix = Array.from({length: this.data.columnPerPage}, (_, rowIndex) =>
-      Array.from({length: this.data.rowsPerPage}, (_, colIndex) =>
-      display[rowIndex * this.data.rowsPerPage + colIndex]
-        )
-      );
-
-    // 设置初始数据
-    this.setData({
-      matrix: matrix
-    });
-
-    console.log("matrix:"+this.data.matrix[0]);
-    console.log("matrix:"+this.data.matrix[1]);
-    console.log("matrix:"+this.data.matrix[2]);
-    console.log("matrix:"+this.data.matrix[3]);
-    console.log("matrix:"+this.data.matrix[4]);
-    console.log("matrix:"+this.data.matrix[5]);
-    console.log("matrix:"+this.data.matrix[6]);
-
+    // 显示第一页
     this.setData({
       currentPage: 0
     });
+    
+    this.displayChars();
+
   },
 
   onNextPage: function () {
     console.log("onNextPage enter.");
 
-    var currentPage = this.data.currentPage;
+    let currentPage = this.data.currentPage;
     currentPage++;
     console.log("currentPage: "+ currentPage);
 
-    console.log("this.data.totalCharNum: "+this.data.totalCharNum);
-    var startPos = currentPage * this.data.totalCharNum;
-    console.log("originalString: "+ this.data.originalString);
-    var subString = this.data.originalString.slice(startPos, startPos + this.data.totalCharNum);
-    console.log("subString 1:"+subString+" startPos: "+ startPos);
-
-    subString = subString.padEnd(this.data.totalCharNum, ' ');
-    console.log("subString 2:"+subString);
-
-    // 转换为二维数组
-    const matrix = Array.from({length: this.data.columnPerPage}, (_, rowIndex) =>
-      Array.from({length: this.data.rowsPerPage}, (_, colIndex) =>
-      subString[rowIndex * this.data.rowsPerPage + colIndex]
-        )
-      );
-
     // 修改用于显示文字的数据
     this.setData({
-      matrix: matrix,
       currentPage: currentPage
     });
+    this.displayChars();
   },
 
   onPreviousPage: function () {
     console.log("onPreviousPage enter.");
 
-    var currentPage = this.data.currentPage;
+    let currentPage = this.data.currentPage;
     currentPage--;
     console.log("currentPage: "+ currentPage);
 
-    console.log("this.data.totalCharNum: "+this.data.totalCharNum);
-    var startPos = currentPage * this.data.totalCharNum;
-    console.log("originalString: "+ this.data.originalString);
-    var subString = this.data.originalString.slice(startPos, startPos + this.data.totalCharNum);
-    console.log("subString 1:"+subString+" startPos: "+ startPos);
-
-    subString = subString.padEnd(this.data.totalCharNum, ' ');
-    console.log("subString 2:"+subString);
-
-    // 转换为二维数组
-    const matrix = Array.from({length: this.data.columnPerPage}, (_, rowIndex) =>
-      Array.from({length: this.data.rowsPerPage}, (_, colIndex) =>
-      subString[rowIndex * this.data.rowsPerPage + colIndex]
-        )
-      );
-
+    
     // 修改用于显示文字的数据
     this.setData({
-      matrix: matrix,
       currentPage: currentPage
     });
+    this.displayChars();
   },
 
   /**
