@@ -17,7 +17,7 @@ Page({
     charString: [], // 存放没有标点符号的中文文字数组
     punct: [], // 专门存放标点符号的数组
     disItems: [],  // 对象数组，用于显示
-    strArray: '一二三四五六七八九十十一十二十三十四十五十六十七十八十九二十二十一二十二二十三二十四二十五二十六二十七二十八二十九三十'.split('')
+    indexArray: []
   },
 
 displayChars: function(){
@@ -72,6 +72,13 @@ displayChars: function(){
       totalCharNum: this.data.rowsPerPage * this.data.columnsPerPage
     });
     console.log("totalCharNum:"+this.data.totalCharNum);
+    
+    // 初始化索引数组
+    const arrayFromZeroToN = Array.from({length: this.data.totalCharNum}, (_, index) => index);
+    console.log(arrayFromZeroToN);
+    this.setData({
+      indexArray: arrayFromZeroToN
+    });
 
     // 分离原文的中文文字和标点符号
     let str = [];
@@ -86,7 +93,7 @@ displayChars: function(){
       }
       else{
         str.push(char); 
-        punct.push(' ');
+        punct.push(" ");
       }
     }
     this.setData({
@@ -121,7 +128,6 @@ displayChars: function(){
     });
     
     this.displayChars();
-
   },
 
   onNextPage: function () {
@@ -145,7 +151,6 @@ displayChars: function(){
     currentPage--;
     console.log("currentPage: "+ currentPage);
 
-    
     // 修改用于显示文字的数据
     this.setData({
       currentPage: currentPage
@@ -153,6 +158,46 @@ displayChars: function(){
     this.displayChars();
   },
 
+  onCellClick: function(event) {
+    console.log("onCellClick enter.");
+    let index = 0;
+    const rowsPerPageTmp = this.data.rowsPerPage;
+
+    const rowIndexTmp = event.currentTarget.dataset.rowIndex;
+    const colIndexTmp = event.currentTarget.dataset.colIndex;
+    index = rowIndexTmp * rowsPerPageTmp + colIndexTmp;
+
+    console.log("Clicked cell at row: " + rowIndexTmp + ", column: " + colIndexTmp + ", index: " + index);
+
+    let matrixTmp = this.data.matrix;
+    console.log(this.data.matrix);
+
+    let charB = matrixTmp[rowIndexTmp][colIndexTmp].charB;
+    console.log("origin char: " + matrixTmp[rowIndexTmp][colIndexTmp].charB);
+
+    if(" " == charB){
+      console.log("get space");
+      charB = "，";
+    }
+    else if("，" == charB){
+      console.log("get ，");
+      charB = "。";
+    }
+    else if("。" == charB){
+      console.log("get 。");
+      charB = " ";
+    }
+    else{
+      console.log("not match.");
+    }
+    
+    console.log("new char: " + charB);
+    matrixTmp[rowIndexTmp][colIndexTmp].charB = charB;
+
+    this.setData({
+      matrix: matrixTmp
+    });
+  },
   /**
    * 生命周期函数--监听页面初次渲染完成
    */

@@ -4,8 +4,8 @@
     <!-- 显示矩阵中的数据 -->
     <block wx:for="{{ matrix }}" wx:key="rowKey">
       <view style="flex-direction: column;">
-        <block wx:for="{{ item }}" wx:key="cellKey">
-          <view style="flex-direction: row;">
+        <block wx:for="{{ item }}" wx:key="cellKey" wx:for-index="innerIndex">
+          <view style="flex-direction: row;"  data-row-index="{{index}}" data-col-index="{{innerIndex}}" bindtap="onCellClick">
             <view class="text" >
               <text>{{ item.charA }}</text>
             </view>
