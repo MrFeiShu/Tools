@@ -208,6 +208,17 @@ displayChars: function(){
     const displayModeTmp = this.data.displayMode;
     if (1 == displayModeTmp) {
       console.log("check mode can not modify punct.");
+      wx.showModal({
+        title: '提示',
+        content: '审阅模式下无法执行标注操作，请切换到标注模式。',
+        showCancel: false, // 关闭取消按钮
+        confirmText: '知道了', // 自定义确定按钮的文字
+        success(res) {
+          if (res.confirm) {
+            console.log('用户点击确定')
+          }
+        }
+      })
       return;
     }
 
