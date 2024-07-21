@@ -4,7 +4,6 @@ Page({
    * 页面的初始数据
    */
   data: {
-    position: 0, // 解析原始字符串的索引
     matrix: [], // 二维数组，用于显示页面的文字。更新该数组，即可使页面文字更新
     currentPage: 0, // 当前页码
     rowsPerPage: 0, // 每页显示的行数
@@ -14,10 +13,9 @@ Page({
     charHeightPx: 50, // 每个字的高度，像素
     totalCharNum: 0, // 每页显示的字符总数
     originalString: "人之初，性本善。性相近，习相远。苟不教，性乃迁。教之道，贵以专。昔孟母，择邻处。子不学，断机杼。窦燕山，有义方。教五子，名俱扬。养不教，父之过。教不严，师之惰。子不学，非所宜。幼不学，老何为。玉不琢，不成器。人不学，不知义。为人子，方少时。亲师友，习礼仪。",
-    charString: [], // 存放没有标点符号的中文文字数组
-    punct: [], // 专门存放标点符号的数组
-    disItems: [],  // 对象数组，用于显示
-    indexArray: [],
+    charArray: [], // 存放没有标点符号的中文文字数组
+    punctArray: [], // 专门存放标点符号的数组
+    disItemsArray: [],  // 对象数组，用于显示
     touchStartX: 0,
     touchEndX: 0
   },
@@ -27,7 +25,7 @@ displayChars: function(){
   const totalCharNumTmp = this.data.totalCharNum;
   const columnsPerPageTmp = this.data.columnsPerPage;
   const rowsPerPageTmp = this.data.rowsPerPage;
-  const itemLength = this.data.disItems.length;
+  const itemLength = this.data.disItemsArray.length;
   let matrixTmp = [];
   let startPos = 0;
   let endPos = 0;
@@ -36,7 +34,7 @@ displayChars: function(){
   // 取当前页面应该显示的字和标点符号
   startPos = curPageIndex * totalCharNumTmp;
   endPos = Math.min(itemLength, startPos + totalCharNumTmp);
-  disItemsTmp = this.data.disItems.slice(startPos, endPos);
+  disItemsTmp = this.data.disItemsArray.slice(startPos, endPos);
   console.log(disItemsTmp);
 
   // 显示字符和标点符号
@@ -74,49 +72,41 @@ displayChars: function(){
       totalCharNum: this.data.rowsPerPage * this.data.columnsPerPage
     });
     console.log("totalCharNum:"+this.data.totalCharNum);
-    
-    // 初始化索引数组
-    const arrayFromZeroToN = Array.from({length: this.data.totalCharNum}, (_, index) => index);
-    console.log(arrayFromZeroToN);
-    this.setData({
-      indexArray: arrayFromZeroToN
-    });
 
     // 分离原文的中文文字和标点符号
-    let str = [];
-    let punct = [];
+    let charArrayTmp = [];
+    let punctArrayTmp = [];
     for (let i = 0; i < this.data.originalString.length; i++) {
       const char = this.data.originalString[i];
 
       // 中文标点
       if (char == '，' || char == '。') {
-        punct.pop();
-        punct.push(char);
+        punctArrayTmp.pop();
+        punctArrayTmp.push(char);
       }
       else{
-        str.push(char); 
-        punct.push(" ");
+        charArrayTmp.push(char); 
+        punctArrayTmp.push(" ");
       }
     }
     this.setData({
-      punct:punct,
-      charString:str
+      punctArray:punctArrayTmp,
+      charArray:charArrayTmp
     });
     
-    console.log("this.data.punct: ", this.data.punct);
-    console.log("this.data.charString: ", this.data.charString);
+    console.log("this.data.punct: ", this.data.punctArray);
+    console.log("this.data.charString: ", this.data.charArray);
 
     // 将中文文字数组和标点符号数组转化为对象数组
     this.setData({
-      disItems: str.map((str1, index) => ({
+      disItemsArray: charArrayTmp.map((str1, index) => ({
         charA: str1,
-        charB: punct[index]
+        charB: punctArrayTmp[index]
       }))
     });
     console.log("print disItems begin.");
-    console.log(this.data.disItems);
+    console.log(this.data.disItemsArray);
     console.log("print disItems end.");
-    let charString = str.join('');
 
     // 初始化总页数
     this.setData({
