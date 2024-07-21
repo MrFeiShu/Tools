@@ -13,11 +13,15 @@ Page({
     charHeightPx: 50, // 每个字的高度，像素
     totalCharNum: 0, // 每页显示的字符总数
     originalString: "人之初，性本善。性相近，习相远。苟不教，性乃迁。教之道，贵以专。昔孟母，择邻处。子不学，断机杼。窦燕山，有义方。教五子，名俱扬。养不教，父之过。教不严，师之惰。子不学，非所宜。幼不学，老何为。玉不琢，不成器。人不学，不知义。为人子，方少时。亲师友，习礼仪。",
-    charArray: [], // 存放没有标点符号的中文文字数组
-    punctArray: [], // 专门存放标点符号的数组
-    disItemsArray: [],  // 对象数组，用于显示
+    itemsArray: [], // 对象数组，保存标注模式下用于显示的文字和标点符号
+    // 对象数组，审阅模式数据，包含文字、新标点符号、旧标点符号和样式名称
+    // 文字：即文本文字
+    // 新标点符号：即用户标记的标点符号
+    // 旧标点符号：即文本原始的标点符号；
+    // 样式名称：即审阅时对于错误的标注需要使用明显的颜色标记出来
     touchStartX: 0,
-    touchEndX: 0
+    touchEndX: 0,
+    displayMode: 0  // 显示模式，0：标注模式(仅显示文字，不显示标点符号)，1：审阅模式(显示所有正确的标点符号以及错误的标点符号)
   },
 
 displayChars: function(){
@@ -25,7 +29,7 @@ displayChars: function(){
   const totalCharNumTmp = this.data.totalCharNum;
   const columnsPerPageTmp = this.data.columnsPerPage;
   const rowsPerPageTmp = this.data.rowsPerPage;
-  const itemLength = this.data.disItemsArray.length;
+  const itemLength = this.data.itemsArray.length;
   let matrixTmp = [];
   let startPos = 0;
   let endPos = 0;
@@ -34,7 +38,7 @@ displayChars: function(){
   // 取当前页面应该显示的字和标点符号
   startPos = curPageIndex * totalCharNumTmp;
   endPos = Math.min(itemLength, startPos + totalCharNumTmp);
-  disItemsTmp = this.data.disItemsArray.slice(startPos, endPos);
+  disItemsTmp = this.data.itemsArray.slice(startPos, endPos);
   console.log(disItemsTmp);
 
   // 显示字符和标点符号
@@ -74,45 +78,59 @@ displayChars: function(){
     console.log("totalCharNum:"+this.data.totalCharNum);
 
     // 分离原文的中文文字和标点符号
-    let charArrayTmp = [];
-    let punctArrayTmp = [];
+    let originPunctArray = []; // 专门存放原始的标点符号的数组
+    let newPunctArray = []; // 专门存放用户标注的标点符号的数组
+    let charArray = []; // 存放没有标点符号的中文文字数组
+    let cssArray = []; // 存放样式名称
+    let checkPunctArray = []; // 专门存放审阅模式下的标点符号
+
     for (let i = 0; i < this.data.originalString.length; i++) {
       const char = this.data.originalString[i];
 
       // 中文标点
       if (char == '，' || char == '。') {
-        punctArrayTmp.pop();
-        punctArrayTmp.push(char);
+        originPunctArray.pop();
+        originPunctArray.push(char);
+        cssArray.pop();
+        cssArray.push("punct_error");
+        checkPunctArray.pop();
+        let checkPunctTmp = " ->" + char;
+        checkPunctArray.push(checkPunctTmp);
       }
       else{
-        charArrayTmp.push(char); 
-        punctArrayTmp.push(" ");
+        charArray.push(char); 
+        originPunctArray.push(" ");
+        cssArray.push("punct_correct");
+        newPunctArray.push(" "); // 用户标注的符号，默认使用空格，即表示没有符号
+        checkPunctArray.push(" ");
       }
     }
-    this.setData({
-      punctArray:punctArrayTmp,
-      charArray:charArrayTmp
-    });
     
-    console.log("this.data.punct: ", this.data.punctArray);
-    console.log("this.data.charString: ", this.data.charArray);
-
     // 将中文文字数组和标点符号数组转化为对象数组
+    // 初始化审阅模式数据
     this.setData({
-      disItemsArray: charArrayTmp.map((str1, index) => ({
-        charA: str1,
-        charB: punctArrayTmp[index]
+      itemsArray: charArray.map((char, index) => ({
+        hanzi: char,
+        originPunct: originPunctArray[index],
+        newPunct: newPunctArray[index],
+        css: cssArray[index],
+        checkPunct: checkPunctArray[index]
       }))
     });
-    console.log("print disItems begin.");
-    console.log(this.data.disItemsArray);
-    console.log("print disItems end.");
+    console.log("print itemsArray begin.");
+    console.log(this.data.itemsArray);
+    console.log("print itemsArray end.");
 
     // 初始化总页数
     this.setData({
       totalPages: Math.ceil(this.data.originalString.length / this.data.totalCharNum)
     });
     console.log("totalPages:"+this.data.totalPages);
+
+    // 设置显示模式为标注模式
+    this.setData({
+      displayMode: 0
+    });
 
     // 显示第一页
     this.setData({
@@ -150,10 +168,52 @@ displayChars: function(){
     this.displayChars();
   },
 
+  onModifyPunctAndState: function(index, newPunct) {
+    console.log("onModifyPunctAndState param: index: " + index + ", punct: " + newPunct);
+
+    const currentPageTmp = this.data.currentPage;
+    const totalCharNumTmp = this.data.totalCharNum;
+    let itemsArrayTmp = this.data.itemsArray;
+
+    let position = currentPageTmp * totalCharNumTmp + index;
+    console.log("position: " + position);
+
+    // 保存用户修改的标点符号
+    itemsArrayTmp[position].newPunct = newPunct;
+
+    // 修改审阅模式的相关数据
+    if (itemsArrayTmp[position].newPunct == itemsArrayTmp[position].originPunct) {
+      // 相等，说明用户标注正确
+      itemsArrayTmp[position].checkPunct = itemsArrayTmp[position].originPunct;
+      itemsArrayTmp[position].css = "punct_correct";
+      console.log("modify punct success, checkPunct:" + itemsArrayTmp[position].checkPunct);
+    }
+    else{
+      // 不相等，说明用户标注失败
+      itemsArrayTmp[position].checkPunct = itemsArrayTmp[position].newPunct + "->" + itemsArrayTmp[position].originPunct;
+      itemsArrayTmp[position].css = "punct_error";
+      console.log("modify punct fail, checkPunct: " + itemsArrayTmp[position].checkPunct);
+    }
+
+    console.log(itemsArrayTmp);
+    // 保存修改的内容
+    this.setData({
+      itemsArray: itemsArrayTmp
+    });
+  },
+
   onCellClick: function(event) {
     console.log("onCellClick enter.");
+
+    const displayModeTmp = this.data.displayMode;
+    if (1 == displayModeTmp) {
+      console.log("check mode can not modify punct.");
+      return;
+    }
+
     let index = 0;
     const rowsPerPageTmp = this.data.rowsPerPage;
+
 
     const rowIndexTmp = event.currentTarget.dataset.rowIndex;
     const colIndexTmp = event.currentTarget.dataset.colIndex;
@@ -164,33 +224,57 @@ displayChars: function(){
     let matrixTmp = this.data.matrix;
     console.log(this.data.matrix);
 
-    let charB = matrixTmp[rowIndexTmp][colIndexTmp].charB;
-    console.log("origin char: " + matrixTmp[rowIndexTmp][colIndexTmp].charB);
+    let newPunct = matrixTmp[rowIndexTmp][colIndexTmp].newPunct;
+    console.log("origin char: " + matrixTmp[rowIndexTmp][colIndexTmp].newPunct);
 
-    if(" " == charB){
+    if(" " == newPunct){
       console.log("get space");
-      charB = "，";
+      newPunct = "，";
     }
-    else if("，" == charB){
+    else if("，" == newPunct){
       console.log("get ，");
-      charB = "。";
+      newPunct = "。";
     }
-    else if("。" == charB){
+    else if("。" == newPunct){
       console.log("get 。");
-      charB = " ";
+      newPunct = " ";
     }
     else{
       console.log("not match.");
     }
     
-    console.log("new char: " + charB);
-    matrixTmp[rowIndexTmp][colIndexTmp].charB = charB;
+    console.log("new char: " + newPunct);
+    matrixTmp[rowIndexTmp][colIndexTmp].newPunct = newPunct;
+
+    this.onModifyPunctAndState(index, newPunct);
 
     this.setData({
       matrix: matrixTmp
     });
   },
+  // 审阅标点符号是否正确标注。从第一页开始审阅
+  onCheckAndMark: function(){
+    let displayModeTmp = this.data.displayMode;
+    let currentPageTmp = this.data.currentPage;
 
+    if(1 == displayModeTmp){
+      console.log("checkMode ---> viewMode.");
+      displayModeTmp = 0;
+    }
+    else{      
+      console.log("viewMode ---> checkMode.");
+      displayModeTmp = 1;
+    }
+
+    currentPageTmp = 0;
+
+    this.setData({
+      displayMode: displayModeTmp,
+      currentPage: currentPageTmp
+    });
+
+    this.displayChars();
+  },
   handleTouchStart: function(event) {
     this.setData({
       touchStartX: event.touches[0].clientX

@@ -29,3 +29,11 @@
 .button {
   margin: 10rpx;
 }
+
+.punct_error{
+  background-color:red;
+}
+
+.punct_correct{
+  background-color: gray;
+}

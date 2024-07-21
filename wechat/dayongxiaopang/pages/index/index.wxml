@@ -7,11 +7,20 @@
         <block wx:for="{{ item }}" wx:key="cellKey" wx:for-index="innerIndex">
           <view style="flex-direction: row;"  data-row-index="{{index}}" data-col-index="{{innerIndex}}" bindtap="onCellClick">
             <view class="text" >
-              <text>{{ item.charA }}</text>
+              <text>{{ item.hanzi }}</text>
             </view>
-            <view class="punctuation" >
-              <text>{{ item.charB }}</text>
-            </view>
+            <!-- 审阅模式，显示标点符号及其状态 -->
+            <block wx:if="{{1 == displayMode}}">
+              <view class="punctuation">
+                <text class="{{item.css}}">{{ item.checkPunct }}</text>
+              </view>
+            </block>
+            <!-- 标注模式，仅显示 用户标注的标点符号 -->
+            <block wx:else>
+              <view class="punctuation">
+                <text class="punct_correct">{{ item.newPunct }}</text>
+              </view>
+            </block>
           </view>
         </block>
       </view>
@@ -21,6 +30,13 @@
   <view class="container" style="flex-direction:row;">
     <!-- 上一页按钮 -->
     <button bindtap="onPreviousPage" disabled="{{ currentPage < 1 }}">上一页</button>
+    <!-- 审阅按钮 -->
+    <block wx:if="{{0 == displayMode}}">
+      <button bindtap="onCheckAndMark">审阅</button>
+    </block>
+    <block wx:else>
+      <button bindtap="onCheckAndMark">标注</button>
+    </block>
     <!-- 下一页按钮 -->
     <button bindtap="onNextPage" disabled="{{ (currentPage + 1) >= totalPages }}">下一页</button>
   </view>
