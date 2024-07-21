@@ -21,7 +21,8 @@ Page({
     // 样式名称：即审阅时对于错误的标注需要使用明显的颜色标记出来
     touchStartX: 0,
     touchEndX: 0,
-    displayMode: 0  // 显示模式，0：标注模式(仅显示文字，不显示标点符号)，1：审阅模式(显示所有正确的标点符号以及错误的标点符号)
+    displayMode: 0,  // 显示模式，0：标注模式(仅显示文字，不显示标点符号)，1：审阅模式(显示所有正确的标点符号以及错误的标点符号)
+    totalPunctNum: 0  // 总的标点符号数量
   },
 
 displayChars: function(){
@@ -83,6 +84,7 @@ displayChars: function(){
     let charArray = []; // 存放没有标点符号的中文文字数组
     let cssArray = []; // 存放样式名称
     let checkPunctArray = []; // 专门存放审阅模式下的标点符号
+    let totalPunctNumTmp = 0;
 
     for (let i = 0; i < this.data.originalString.length; i++) {
       const char = this.data.originalString[i];
@@ -96,6 +98,7 @@ displayChars: function(){
         checkPunctArray.pop();
         let checkPunctTmp = " ->" + char;
         checkPunctArray.push(checkPunctTmp);
+        totalPunctNumTmp++;
       }
       else{
         charArray.push(char); 
@@ -115,7 +118,8 @@ displayChars: function(){
         newPunct: newPunctArray[index],
         css: cssArray[index],
         checkPunct: checkPunctArray[index]
-      }))
+      })),
+      totalPunctNum: totalPunctNumTmp
     });
     console.log("print itemsArray begin.");
     console.log(this.data.itemsArray);
@@ -218,7 +222,7 @@ displayChars: function(){
             console.log('用户点击确定')
           }
         }
-      })
+      });
       return;
     }
 
@@ -275,6 +279,37 @@ displayChars: function(){
     else{      
       console.log("viewMode ---> checkMode.");
       displayModeTmp = 1;
+    }
+
+    if (1 == displayModeTmp) {
+      // 如果切换到审阅模式，则先弹框提示标注结果
+      // 结果要包含总的标点符号数量和标注正确的数量
+      const totalPunctNumTmp = this.data.totalPunctNum;
+      let correctPunctNum = totalPunctNumTmp;
+      let resultMsg = "";
+      let itemsArrayTmp = this.data.itemsArray;
+
+      // 计算标注正确的标点符号数量
+      for (let i = 0; i < itemsArrayTmp.length; i++) {
+        if ("punct_error" == itemsArrayTmp[i].css) {
+          correctPunctNum--;
+        }
+      }
+      console.log("correctPunctNum: " + correctPunctNum + ", totalPunctNumTmp: " + totalPunctNumTmp);
+      resultMsg = "您的标注结果：" + correctPunctNum + "/" + totalPunctNumTmp + "(正确数/总数)";
+      console.log(resultMsg);
+
+      wx.showModal({
+        title: '提示',
+        content: resultMsg,
+        showCancel: false, // 关闭取消按钮
+        confirmText: '知道了', // 自定义确定按钮的文字
+        success(res) {
+          if (res.confirm) {
+            console.log('用户点击确定')
+          }
+        }
+      });
     }
 
     currentPageTmp = 0;
