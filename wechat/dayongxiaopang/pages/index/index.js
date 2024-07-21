@@ -22,7 +22,9 @@ Page({
     touchStartX: 0,
     touchEndX: 0,
     displayMode: 0,  // 显示模式，0：标注模式(仅显示文字，不显示标点符号)，1：审阅模式(显示所有正确的标点符号以及错误的标点符号)
-    totalPunctNum: 0  // 总的标点符号数量
+    totalPunctNum: 0,  // 总的标点符号数量
+    urlShiyi: "http://106.53.57.234:8080/shiyi?wd=",
+    shiyi: []
   },
 
 displayChars: function(){
@@ -229,7 +231,6 @@ displayChars: function(){
     let index = 0;
     const rowsPerPageTmp = this.data.rowsPerPage;
 
-
     const rowIndexTmp = event.currentTarget.dataset.rowIndex;
     const colIndexTmp = event.currentTarget.dataset.colIndex;
     index = rowIndexTmp * rowsPerPageTmp + colIndexTmp;
@@ -265,6 +266,66 @@ displayChars: function(){
 
     this.setData({
       matrix: matrixTmp
+    });
+  },
+  handleLongPress: function(event) {
+    console.log('长按事件被触发');
+    // 在这里处理长按事件，例如显示一个操作菜单
+    let index = 0;
+    const matrixTmp = this.data.matrix;
+    const rowsPerPageTmp = this.data.rowsPerPage;
+
+    const rowIndexTmp = event.currentTarget.dataset.rowIndex;
+    const colIndexTmp = event.currentTarget.dataset.colIndex;
+    index = rowIndexTmp * rowsPerPageTmp + colIndexTmp;
+
+    console.log("Clicked cell at row: " + rowIndexTmp + ", column: " + colIndexTmp + ", index: " + index + " , hanzi: " + matrixTmp[rowIndexTmp][colIndexTmp].hanzi);
+    console.log(matrixTmp);
+
+    // 弹框显示该汉字的解释
+    let url = this.data.urlShiyi;
+    url += matrixTmp[rowIndexTmp][colIndexTmp].hanzi;
+    console.log("url: " + url);
+    
+    const that = this;
+
+    wx.request({
+      url: url, // 服务器接口地址
+      method: 'GET',
+      data: {
+        // GET请求参数，字符串键值对
+      },
+      header: {
+        'content-type': 'application/json' // 默认值
+      },
+      success: function(res) {
+        if (res.statusCode === 200) {
+          let title = matrixTmp[rowIndexTmp][colIndexTmp].hanzi + "的释义";
+          let shiyi = [];
+          shiyi = res.data;
+          console.log("shiyi" + shiyi);
+          
+          wx.showModal({
+            title: title,
+            content: shiyi,
+            showCancel: false, // 关闭取消按钮
+            confirmText: '知道了', // 自定义确定按钮的文字
+            success(res) {
+              if (res.confirm) {
+                console.log('用户点击确定')
+              }
+            }
+          });
+        } else {
+          console.error('请求失败，状态码：' + res.statusCode);
+        }
+      },
+      fail: function() {
+        console.error('请求失败');
+      },
+      complete: function() {
+        // 请求完成后的回调函数
+      }
     });
   },
   // 审阅标点符号是否正确标注。从第一页开始审阅

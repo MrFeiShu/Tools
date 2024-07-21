@@ -5,7 +5,7 @@
     <block wx:for="{{ matrix }}" wx:key="rowKey">
       <view style="flex-direction: column;">
         <block wx:for="{{ item }}" wx:key="cellKey" wx:for-index="innerIndex">
-          <view style="flex-direction: row;"  data-row-index="{{index}}" data-col-index="{{innerIndex}}" bindtap="onCellClick">
+          <view style="flex-direction: row;"  data-row-index="{{index}}" data-col-index="{{innerIndex}}" bindtap="onCellClick" bindlongpress="handleLongPress">
             <view class="text" >
               <text>{{ item.hanzi }}</text>
             </view>
