@@ -1,39 +1,29 @@
 /**index.wxss**/
-.container {
-  display: flex;
-  background-color: gray;
-  padding: 0px;
-}
+/* view1样式，覆盖整个页面（视窗高度） */  
+.cata-container {  
+  display: flex;  
+  height: 100vh;  
+  width: 100%;  
+  background-color: #f0f0f0;  
+}  
 
-.row {
-  display: flex;
-  flex-direction: row;
-}
-
-.text {
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 30px;
-  font-size: 30px;
-  font-family:cursive;
-}
-
-.punctuation{
-  text-align: right;
-  width: 50px;
-  height: 20px;
-  font-size: 10px;
-}
-
-.button {
-  margin: 10rpx;
-}
-
-.punct_error{
-  background-color:red;
-}
-
-.punct_correct{
-  background-color: gray;
+/* scroll-view内部元素的样式 */  
+.book-child,  
+.chapter-child {  
+  padding: 10px; /* 为子元素添加内边距 */  
+}  
+  
+/* 可选：为view2和view3添加不同的背景色以区分它们 */  
+.book {  
+  flex: 25; 
+  height: 100%; /* 占据整个view1的高度 */  
+  overflow: hidden; /* 隐藏超出部分的内容 */
+  background-color: gray;  
+}  
+  
+.chapter {  
+  flex: 75;  
+  height: 100%; /* 占据整个view1的高度 */  
+  overflow: hidden; /* 隐藏超出部分的内容 */  
+  background-color: skyblue;  
 }
